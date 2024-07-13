@@ -20,3 +20,9 @@ with the following possible options:
 - `--author <name>` | `-a <name>`: sets the author name
 - `--desc <description>` | `-d <description>` sets the program description
 - `--subname` | `-s` appends `(<filename>)` to the end of the description
+
+you may install GPLGEN by cd-ing into the main directory and running
+
+```
+sudo make INSTALL
+```
