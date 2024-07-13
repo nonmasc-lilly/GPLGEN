@@ -90,6 +90,14 @@ static void help() {
     puts("This is free software, and you are welcome to redistribute it");
     puts("under the conditions of the GNU General Public Licence.");
     puts("For more information, see: <https://www.gnu.org/licenses/>");
+
+    puts("\nOPTIONS:");
+    puts("\t'-l' or '--licence': generate a licence file");
+    puts("\t'-p <name>' or '--project <name>': set the project name to <name>");
+    puts("\t'-y <year>' or '--copyyear <year>': set the project copyright year to <year>");
+    puts("\t'-a <name>' or '--author <name>': set the author name to <name>");
+    puts("\t'-d <desc>' or '--desc <desc>': set the description to <desc>");
+    puts("\t'-s' or '--subname': append '(<filename>)' to the description line");
 }
 
 static void gpl_licence(const char *path) {
