@@ -127,7 +127,7 @@ static void gpl_regular(const char *path, const char *name, const char *author, 
         snv = malloc(strlen(path+i)+3);
         sprintf(snv, "(%s)", path+i);
     }
-    fprintf(fp, GPL_COMMENT_FORMAT_STRING, name, desc, year, author, snv);
+    fprintf(fp, GPL_COMMENT_FORMAT_STRING, name, desc, snv, year, author);
     if(subname) free(snv);
     fclose(fp);
 }
