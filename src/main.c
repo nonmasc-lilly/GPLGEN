@@ -1,6 +1,6 @@
 /*
-*   GPLGEN, a GNU GPL comment/LICENCE file generator 2024
-*   Copyright (C) Lilly H. St Claire (main.c)
+*   GPLGEN, a GNU GPL comment/LICENCE file generator (main.c)
+*   Copyright (C) 2024 Lilly H. St Claire
 *
 *            This program is free software: you can redistribute it and/or modify
 *            it under the terms of the GNU General Public License as published by
@@ -24,22 +24,31 @@
 #include "main.h"
 
 #define VERSION_MAJOR 1
-#define VERSION_MINOR 1
+#define VERSION_MINOR 2
+#define OPTION_NUM    4
+
 
 static void gpl_licence(const char *path);
 static void gpl_regular(const char *path, const char *name, const char *author, const char *year, const char *desc,
     bool subname);
 static void help();
+static void parse_config(const char *config_path, char **options);
+static void write_config(const char *config_path, const char *name, const char *author, const char *year,
+    const char *desc);
 
 int main(int argc, char **argv) {
     uint32_t i;
     char *eptr;
-    const char *name, *author, *year, *desc;
-    bool subname;
+    const char *name, *author, *year, *desc, *config_path;
+    bool subname, config, dontwrite;
     name="__GPLGEN__NONAMEPROVIDED";
     author="__GPLGEN__NOAUTHORPROVIDED";
     year="__GPLGEN__NOYEARPROVIDED";
-    desc="";
+    desc="__GPLGEN__NODESCRIPTIONPROVIDED";
+    config_path = "";
+    config = false;
+    dontwrite = false;
+    subname = false;
     if(argc < 2) {
         printf("Error: Usage: %s [OPTIONS] <filename>\n");
         help();
@@ -66,6 +75,10 @@ int main(int argc, char **argv) {
             l_subname: subname = true; break;
         case 'h':
             l_help: help(); exit(0);
+        case 'c':
+            l_config: config = true; config_path = argv[++i]; break;
+        case 'u':
+            l_useconfig: config_path = argv[++i]; break;
         case '-':
             if(!strcmp(argv[i]+2, "licence")) goto l_license;
             else if(!strcmp(argv[i]+2, "project")) goto l_project;
@@ -74,10 +87,24 @@ int main(int argc, char **argv) {
             else if(!strcmp(argv[i]+2, "desc")) goto l_description;
             else if(!strcmp(argv[i]+2, "subname")) goto l_subname;
             else if(!strcmp(argv[i]+2, "help")) goto l_help;
+            else if(!strcmp(argv[i]+2, "config")) goto l_config;
+            else if(!strcmp(argv[i]+2, "useconfig")) goto l_useconfig;
+            else if(!strcmp(argv[i]+2, "dontwrite")) dontwrite=true;
             break;
         }
     }
-    gpl_regular(argv[argc-1], name, author, year, desc, subname);
+    printf("%s\n", config_path);
+    if(*config_path && !config && !dontwrite) {
+        char *options[OPTION_NUM];
+        parse_config(config_path, options);
+        gpl_regular(argv[argc-1], options[0], options[1], options[2], options[3], subname);
+        for(i=0; i<OPTION_NUM; i++) {
+            free(options[i]);
+        }
+    } else {
+        if(config)     write_config(config_path, name, author, year, desc);
+        if(!dontwrite) gpl_regular(argv[argc-1], name, author, year, desc, subname);
+    }
     return 0;
 }
 
@@ -132,3 +159,43 @@ static void gpl_regular(const char *path, const char *name, const char *author, 
     fclose(fp);
 }
 
+static void parse_config(const char *config_path, char **options) {
+    FILE *fp;
+    uint32_t i;
+    char c;
+    printf("HEY\n");
+    fp = fopen(config_path, "r");
+    if(!fp) {
+        printf("Error: could not open config file %s for parsing\n", config_path);
+        exit(4);
+    }
+    for(i=0; i<OPTION_NUM; i++) {
+        options[i] = calloc(1,1);
+        while((c = getc(fp)) != '\n') {
+            if(c == EOF) {
+                printf("Error: not enough lines for config file %s\n", config_path);
+                exit(7);
+            }
+            options[i] = realloc(options[i], strlen(options[i])+2);
+            options[i][strlen(options[i])] = c;
+            options[i][strlen(options[i])+1] = 0;
+        }
+        if(!(*(options[i]))) {
+            printf("Error: empty line in config file %s\n", config_path);
+            exit(5);
+        }
+    }
+    fclose(fp);
+}
+
+static void write_config(const char *config_path, const char *name, const char *author, const char *year,
+        const char *desc) {
+    FILE *fp;
+    fp = fopen(config_path, "w");
+    if(!fp) {
+        printf("Error: config file %s cannot be opened for writing\n", config_path);
+        exit(6);
+    }
+    fprintf(fp, "%s\n%s\n%s\n%s\n", name, author, year, desc);
+    fclose(fp);
+}

@@ -20,6 +20,12 @@ with the following possible options:
 - `--author <name>` | `-a <name>`: sets the author name
 - `--desc <description>` | `-d <description>` sets the program description
 - `--subname` | `-s` appends `(<filename>)` to the end of the description
+- `--help` | `-h` shows a help menu
+- `--config <config>` | `-c <config>` creates a config file `(<config>)` of the current project name copyyear author
+                                      and description
+- `--useconfig <config>` | `-u <config>` uses the options in config file `(<config>)`
+- `--dontwrite` dont write the comment to a file (useful for generating a config file without also generating a new
+                file
 
 you may install GPLGEN by cd-ing into the main directory and running
 
