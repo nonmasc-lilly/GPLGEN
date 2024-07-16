@@ -93,7 +93,6 @@ int main(int argc, char **argv) {
             break;
         }
     }
-    printf("%s\n", config_path);
     if(*config_path && !config && !dontwrite) {
         char *options[OPTION_NUM];
         parse_config(config_path, options);
@@ -119,12 +118,15 @@ static void help() {
     puts("For more information, see: <https://www.gnu.org/licenses/>");
 
     puts("\nOPTIONS:");
-    puts("\t'-l' or '--licence': generate a licence file");
+    puts("\t'-l' or '--licence': generate a licence file and exit");
     puts("\t'-p <name>' or '--project <name>': set the project name to <name>");
     puts("\t'-y <year>' or '--copyyear <year>': set the project copyright year to <year>");
     puts("\t'-a <name>' or '--author <name>': set the author name to <name>");
     puts("\t'-d <desc>' or '--desc <desc>': set the description to <desc>");
     puts("\t'-s' or '--subname': append '(<filename>)' to the description line");
+    puts("\t'-c <cfile>' or '--config <cfile>': create a config file (<cfile>) with properties of other passed arguments");
+    puts("\t'-u <cfile>' or '--useconfig <cfile>': use a config file (<cfile>) in place of other passed arguments");
+    puts("\t'--dontwrite': dont write an output file (will still write licence/config files)");
 }
 
 static void gpl_licence(const char *path) {
@@ -163,7 +165,6 @@ static void parse_config(const char *config_path, char **options) {
     FILE *fp;
     uint32_t i;
     char c;
-    printf("HEY\n");
     fp = fopen(config_path, "r");
     if(!fp) {
         printf("Error: could not open config file %s for parsing\n", config_path);
