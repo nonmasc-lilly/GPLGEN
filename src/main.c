@@ -21,7 +21,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "main.h"
+#include "gpl.h"
 
 #define VERSION_MAJOR 1
 #define VERSION_MINOR 2
@@ -30,7 +30,7 @@
 
 static void gpl_licence(const char *path);
 static void gpl_regular(const char *path, const char *name, const char *author, const char *year, const char *desc,
-    bool subname);
+    const char *remark_type, bool subname);
 static void help();
 static void parse_config(const char *config_path, char **options);
 static void write_config(const char *config_path, const char *name, const char *author, const char *year,
@@ -39,12 +39,13 @@ static void write_config(const char *config_path, const char *name, const char *
 int main(int argc, char **argv) {
     uint32_t i;
     char *eptr;
-    const char *name, *author, *year, *desc, *config_path;
+    const char *name, *author, *year, *desc, *config_path, *remark_type;
     bool subname, config, dontwrite;
     name="__GPLGEN__NONAMEPROVIDED";
     author="__GPLGEN__NOAUTHORPROVIDED";
     year="__GPLGEN__NOYEARPROVIDED";
     desc="__GPLGEN__NODESCRIPTIONPROVIDED";
+    remark_type = "C";
     config_path = "";
     config = false;
     dontwrite = false;
@@ -79,6 +80,8 @@ int main(int argc, char **argv) {
             l_config: config = true; config_path = argv[++i]; break;
         case 'u':
             l_useconfig: config_path = argv[++i]; break;
+        case 'r':
+            l_remark: remark_type = argv[++i]; break;
         case '-':
             if(!strcmp(argv[i]+2, "licence")) goto l_license;
             else if(!strcmp(argv[i]+2, "project")) goto l_project;
@@ -90,19 +93,20 @@ int main(int argc, char **argv) {
             else if(!strcmp(argv[i]+2, "config")) goto l_config;
             else if(!strcmp(argv[i]+2, "useconfig")) goto l_useconfig;
             else if(!strcmp(argv[i]+2, "dontwrite")) dontwrite=true;
+            else if(!strcmp(argv[i]+2, "remark")) goto l_remark;
             break;
         }
     }
     if(*config_path && !config && !dontwrite) {
         char *options[OPTION_NUM];
         parse_config(config_path, options);
-        gpl_regular(argv[argc-1], options[0], options[1], options[2], options[3], subname);
+        gpl_regular(argv[argc-1], options[0], options[1], options[2], options[3], remark_type, subname);
         for(i=0; i<OPTION_NUM; i++) {
             free(options[i]);
         }
     } else {
         if(config)     write_config(config_path, name, author, year, desc);
-        if(!dontwrite) gpl_regular(argv[argc-1], name, author, year, desc, subname);
+        if(!dontwrite) gpl_regular(argv[argc-1], name, author, year, desc, remark_type, subname);
     }
     return 0;
 }
@@ -127,6 +131,12 @@ static void help() {
     puts("\t'-c <cfile>' or '--config <cfile>': create a config file (<cfile>) with properties of other passed arguments");
     puts("\t'-u <cfile>' or '--useconfig <cfile>': use a config file (<cfile>) in place of other passed arguments");
     puts("\t'--dontwrite': dont write an output file (will still write licence/config files)");
+    puts("\t'-r <type>' or '--remark <type>': sets the language of the remark, types are as follows:");
+    puts("\t\tC      : C style comments ('/* */')");
+    puts("\t\tC++    : C++ style comments ('//')");
+    puts("\t\tPython : Python style comments ('#')");
+    puts("\t\tVBasic : Visual Basic style comments (''')");
+    puts("\t\tOcaml  : Ocaml style comments ('(* *)')");
 }
 
 static void gpl_licence(const char *path) {
@@ -141,7 +151,7 @@ static void gpl_licence(const char *path) {
 }
 
 static void gpl_regular(const char *path, const char *name, const char *author, const char *year, const char *desc,
-        bool subname) {
+        const char *remark_type, bool subname) {
     FILE *fp;
     char *snv;
     uint32_t i;
@@ -156,7 +166,14 @@ static void gpl_regular(const char *path, const char *name, const char *author, 
         snv = malloc(strlen(path+i)+3);
         sprintf(snv, "(%s)", path+i);
     }
-    fprintf(fp, GPL_COMMENT_FORMAT_STRING, name, desc, snv, year, author);
+    for(i=0; i<CM__MAX; i++) {
+        if(!strcmp(GPL_COMMENT_TYPE_REP[i],remark_type)) break;
+    }
+    if(i == CM__MAX) {
+        printf("REMARK TYPE ERROR\n");
+        exit(1);
+    }
+    GPLGENFP(fp, i, name, desc, snv, year, author);
     if(subname) free(snv);
     fclose(fp);
 }
