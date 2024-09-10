@@ -543,11 +543,12 @@ enum GPL_COMMENT_TYPE {
     CM_PYTHON,
     CM_VISUAL_BASIC,
     CM_OCAML,
+    CM_MARKDOWN,
     CM__MAX
 };
 
 static const char *GPL_COMMENT_TYPE_REP[CM__MAX] = {
-    "C", "C++", "Python", "VBasic", "Ocaml"
+    "C", "C++", "Python", "Visual Basic", "Ocaml", "Markdown"
 };
 
 static const char *GPL_COMMENT_STARTS[CM__MAX] = {
@@ -555,21 +556,24 @@ static const char *GPL_COMMENT_STARTS[CM__MAX] = {
     "//",
     "#",
     "'",
-    "(*"
+    "(*",
+    "[//]: #"
 };
 static const char *GPL_COMMENT_ENDS[CM__MAX] = {
     "*/",
     "//",
     "#",
     "'",
-    "*)"
+    "*)",
+    ""
 };
 static const char *GPL_COMMENT_CONTINUES[CM__MAX] = {
     "*",
     "//",
     "#",
     "'",
-    "*"
+    "*",
+    "[//]: #"
 };
 
 

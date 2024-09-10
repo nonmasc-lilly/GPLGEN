@@ -112,6 +112,7 @@ int main(int argc, char **argv) {
 }
 
 static void help() {
+    uint16_t i;
     printf("GPLGEN V%d.%d\n", VERSION_MAJOR, VERSION_MINOR);
     puts("GPLGEN, a GNU GPL disclaimer/LICENCE file generator Copyright (C) 2024 Lilly H. St Claire");
     puts("This program comes with ABSOLUTELY NO WARRANTY, not even the");
@@ -132,11 +133,14 @@ static void help() {
     puts("\t'-u <cfile>' or '--useconfig <cfile>': use a config file (<cfile>) in place of other passed arguments");
     puts("\t'--dontwrite': dont write an output file (will still write licence/config files)");
     puts("\t'-r <type>' or '--remark <type>': sets the language of the remark, types are as follows:");
-    puts("\t\tC      : C style comments ('/* */')");
-    puts("\t\tC++    : C++ style comments ('//')");
-    puts("\t\tPython : Python style comments ('#')");
-    puts("\t\tVBasic : Visual Basic style comments (''')");
-    puts("\t\tOcaml  : Ocaml style comments ('(* *)')");
+    for(i=0; i<CM__MAX; i++)
+        printf(
+            "\t\t%-20s: %s style comments ('%s %s')\n",
+            GPL_COMMENT_TYPE_REP[i],
+            GPL_COMMENT_TYPE_REP[i],
+            GPL_COMMENT_STARTS[i],
+            GPL_COMMENT_ENDS[i]
+        );
 }
 
 static void gpl_licence(const char *path) {
