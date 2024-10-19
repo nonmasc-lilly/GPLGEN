@@ -26,6 +26,8 @@ with the following possible options:
 - `--useconfig <config>` | `-u <config>` uses the options in config file `(<config>)`
 - `--dontwrite` dont write the comment to a file (useful for generating a config file without also generating a new
                 file
+- `--dontstandout` dont write the original contents to stdout
+- `--prepend` prepend the generated contents to the file instead of overwriting
 
 you may install GPLGEN by cd-ing into the main directory and running
 

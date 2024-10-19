@@ -37,10 +37,11 @@ static void write_config(const char *config_path, const char *name, const char *
     const char *desc);
 
 int main(int argc, char **argv) {
-    uint32_t i;
-    char *eptr;
+    uint32_t i, len;
+    char *eptr, *content;
+    FILE *fp;
     const char *name, *author, *year, *desc, *config_path, *remark_type;
-    bool subname, config, dontwrite;
+    bool subname, config, dontwrite, dontstdout, prepend;
     name="__GPLGEN__NONAMEPROVIDED";
     author="__GPLGEN__NOAUTHORPROVIDED";
     year="__GPLGEN__NOYEARPROVIDED";
@@ -50,8 +51,10 @@ int main(int argc, char **argv) {
     config = false;
     dontwrite = false;
     subname = false;
+    dontstdout=false;
+    prepend = false;
     if(argc < 2) {
-        printf("Error: Usage: %s [OPTIONS] <filename>\n");
+        fprintf(stderr, "Error: Usage: %s [OPTIONS] <filename>\n");
         help();
         exit(3);
     }
@@ -64,7 +67,7 @@ int main(int argc, char **argv) {
         case 'y':
             l_year: strtol(argv[++i], &eptr, 10);
             if(*eptr) {
-                printf("Error: year is not a number\n");
+                fprintf(stderr, "Error: year is not a number\n");
                 exit(2);
             }
             year = argv[i]; break;
@@ -94,8 +97,30 @@ int main(int argc, char **argv) {
             else if(!strcmp(argv[i]+2, "useconfig")) goto l_useconfig;
             else if(!strcmp(argv[i]+2, "dontwrite")) dontwrite=true;
             else if(!strcmp(argv[i]+2, "remark")) goto l_remark;
+            else if(!strcmp(argv[i]+2, "dontstandout")) dontstdout=true;
+            else if(!strcmp(argv[i]+2, "prepend")) prepend=true;
             break;
         }
+    }
+    if(!dontstdout) {
+        fp = fopen(argv[argc-1], "r");
+        fseek(fp, 0L, SEEK_END);
+        len = ftell(fp);
+        fseek(fp, 0L, SEEK_SET);
+        content = malloc(len+1);
+        fread(content, 1, len, fp);
+        fclose(fp);
+        printf("%s", content);
+        free(content);
+    }
+    if(prepend) {
+        fp = fopen(argv[argc-1], "r");
+        fseek(fp, 0L, SEEK_END);
+        len = ftell(fp);
+        fseek(fp, 0L, SEEK_SET);
+        content = malloc(len+1);
+        fread(content, 1, len, fp);
+        fclose(fp);
     }
     if(*config_path && !config && !dontwrite) {
         char *options[OPTION_NUM];
@@ -107,6 +132,12 @@ int main(int argc, char **argv) {
     } else {
         if(config)     write_config(config_path, name, author, year, desc);
         if(!dontwrite) gpl_regular(argv[argc-1], name, author, year, desc, remark_type, subname);
+    }
+    if(prepend) {
+        fp = fopen(argv[argc-1], "a");
+        fwrite(content, 1, len, fp);
+        fclose(fp);
+        free(content);
     }
     return 0;
 }
@@ -132,6 +163,8 @@ static void help() {
     puts("\t'-c <cfile>' or '--config <cfile>': create a config file (<cfile>) with properties of other passed arguments");
     puts("\t'-u <cfile>' or '--useconfig <cfile>': use a config file (<cfile>) in place of other passed arguments");
     puts("\t'--dontwrite': dont write an output file (will still write licence/config files)");
+    puts("\t'--dontstandout': dont write the contents of the input file to stdout");
+    puts("\t'--prepend': write the gpl disclaimer to the beginning of the file instead of overwriting it");
     puts("\t'-r <type>' or '--remark <type>': sets the language of the remark, types are as follows:");
     for(i=0; i<CM__MAX; i++)
         printf(
@@ -147,7 +180,7 @@ static void gpl_licence(const char *path) {
     FILE *fp;
     fp = fopen(path, "w");
     if(!fp) {
-        printf("Error: could not open %s for writing\n", path);
+        fprintf(stderr, "Error: could not open %s for writing\n", path);
         exit(1);
     }
     fwrite(GPL_LICENCE_STRING, 1, strlen(GPL_LICENCE_STRING), fp);
@@ -162,7 +195,7 @@ static void gpl_regular(const char *path, const char *name, const char *author, 
     snv = "";
     fp = fopen(path, "w");
     if(!fp) {
-        printf("Error: could not open %s for writing\n", path);
+        fprintf(stderr, "Error: could not open %s for writing\n", path);
         exit(1);
     }
     if(subname) {
@@ -188,14 +221,14 @@ static void parse_config(const char *config_path, char **options) {
     char c;
     fp = fopen(config_path, "r");
     if(!fp) {
-        printf("Error: could not open config file %s for parsing\n", config_path);
+        fprintf(stderr, "Error: could not open config file %s for parsing\n", config_path);
         exit(4);
     }
     for(i=0; i<OPTION_NUM; i++) {
         options[i] = calloc(1,1);
         while((c = getc(fp)) != '\n') {
             if(c == EOF) {
-                printf("Error: not enough lines for config file %s\n", config_path);
+                fprintf(stderr, "Error: not enough lines for config file %s\n", config_path);
                 exit(7);
             }
             options[i] = realloc(options[i], strlen(options[i])+2);
@@ -203,7 +236,7 @@ static void parse_config(const char *config_path, char **options) {
             options[i][strlen(options[i])+1] = 0;
         }
         if(!(*(options[i]))) {
-            printf("Error: empty line in config file %s\n", config_path);
+            fprintf(stderr, "Error: empty line in config file %s\n", config_path);
             exit(5);
         }
     }
@@ -215,7 +248,7 @@ static void write_config(const char *config_path, const char *name, const char *
     FILE *fp;
     fp = fopen(config_path, "w");
     if(!fp) {
-        printf("Error: config file %s cannot be opened for writing\n", config_path);
+        fprintf(stderr, "Error: config file %s cannot be opened for writing\n", config_path);
         exit(6);
     }
     fprintf(fp, "%s\n%s\n%s\n%s\n", name, author, year, desc);
