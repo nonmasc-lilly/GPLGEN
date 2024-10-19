@@ -104,6 +104,7 @@ int main(int argc, char **argv) {
     }
     if(!dontstdout) {
         fp = fopen(argv[argc-1], "r");
+        if(!fp) goto exit_dontstdout;
         fseek(fp, 0L, SEEK_END);
         len = ftell(fp);
         fseek(fp, 0L, SEEK_SET);
@@ -113,8 +114,13 @@ int main(int argc, char **argv) {
         printf("%s", content);
         free(content);
     }
+exit_dontstdout:
     if(prepend) {
         fp = fopen(argv[argc-1], "r");
+        if(!fp) {
+                content = NULL;
+                goto exit_prepend;
+        }
         fseek(fp, 0L, SEEK_END);
         len = ftell(fp);
         fseek(fp, 0L, SEEK_SET);
@@ -122,6 +128,7 @@ int main(int argc, char **argv) {
         fread(content, 1, len, fp);
         fclose(fp);
     }
+exit_prepend:
     if(*config_path && !config && !dontwrite) {
         char *options[OPTION_NUM];
         parse_config(config_path, options);
@@ -133,7 +140,7 @@ int main(int argc, char **argv) {
         if(config)     write_config(config_path, name, author, year, desc);
         if(!dontwrite) gpl_regular(argv[argc-1], name, author, year, desc, remark_type, subname);
     }
-    if(prepend) {
+    if(prepend && content) {
         fp = fopen(argv[argc-1], "a");
         fwrite(content, 1, len, fp);
         fclose(fp);
@@ -207,7 +214,7 @@ static void gpl_regular(const char *path, const char *name, const char *author, 
         if(!strcmp(GPL_COMMENT_TYPE_REP[i],remark_type)) break;
     }
     if(i == CM__MAX) {
-        printf("REMARK TYPE ERROR\n");
+        fprintf(stderr, "Error: REMARK TYPE ERROR\n");
         exit(1);
     }
     GPLGENFP(fp, i, name, desc, snv, year, author);
@@ -226,14 +233,14 @@ static void parse_config(const char *config_path, char **options) {
     }
     for(i=0; i<OPTION_NUM; i++) {
         options[i] = calloc(1,1);
-        while((c = getc(fp)) != '\n') {
+        while((c = getc(fp)) != '\n' && c != '\0') {
             if(c == EOF) {
                 fprintf(stderr, "Error: not enough lines for config file %s\n", config_path);
                 exit(7);
             }
             options[i] = realloc(options[i], strlen(options[i])+2);
-            options[i][strlen(options[i])] = c;
             options[i][strlen(options[i])+1] = 0;
+            options[i][strlen(options[i])] = c;
         }
         if(!(*(options[i]))) {
             fprintf(stderr, "Error: empty line in config file %s\n", config_path);
